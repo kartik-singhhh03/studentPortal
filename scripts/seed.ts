@@ -1,14 +1,21 @@
 /**
- * Optional development seed script.
- * Phase 1: placeholder only — import pipeline lands in a later phase.
+ * Development seed helper.
  *
- * Intended usage (later):
+ * Prefer importing via the UI or POST /api/imports with sample-data CSVs.
+ * This script documents the intended path without inventing student rows.
+ *
  *   npx tsx scripts/seed.ts
  */
 
 async function main() {
   console.log(
-    "Seed is not implemented in Phase 1. Use the CSV import API after Phase 2.",
+    [
+      "Seed placeholder.",
+      "Place assignment CSVs in sample-data/ (gitignored), then:",
+      "  1) npm run dev",
+      "  2) open /import and upload students_small.csv or students_sample.csv",
+      "Or POST multipart file=... to /api/imports.",
+    ].join("\n"),
   );
 }
 

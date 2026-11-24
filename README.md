@@ -2,9 +2,9 @@
 
 Full-stack Next.js application for the Es Magico Fullstack Internship assignment.
 
-## Phase 1 status
+## Status
 
-Architecture, data contract, Prisma schema, core libraries, and deployment scaffolding are in place. CSV import UI and student screens are intentionally deferred.
+Phases 1–3 are implemented: Neon/Prisma foundation, CSV import engine, and the administrator portal UI (dashboard, students, import, import history).
 
 See:
 
@@ -63,6 +63,19 @@ Do **not** commit:
 - any other files under `sample-data/`
 
 Place the pack at the repo root as `sample-data/` for local testing only. Never put assignment CSVs under `public/`.
+
+## Screens
+
+| Path | Purpose |
+|---|---|
+| `/` | Dashboard statistics and recent imports |
+| `/students` | Searchable, filterable, paginated student list |
+| `/students/[studentId]` | Student report with marks and grading |
+| `/import` | CSV upload and import results |
+| `/imports` | Import history |
+| `/imports/[importId]` | Import detail + paginated errors |
+
+Also see [NOTES.md](NOTES.md) for product decisions.
 
 ## Scripts
 
