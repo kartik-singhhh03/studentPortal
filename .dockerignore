@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.gitignore
+sample-data
+coverage
+*.md
+!README.md
+.env*
+!.env.example
+npm-debug.log*
+Dockerfile
+docker-compose.yml
+scripts/_analyze_samples.mjs

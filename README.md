@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Es Magico — Student Results Portal
 
-## Getting Started
+Full-stack Next.js application for the Es Magico Fullstack Internship assignment.
 
-First, run the development server:
+## Phase 1 status
+
+Architecture, data contract, Prisma schema, core libraries, and deployment scaffolding are in place. CSV import UI and student screens are intentionally deferred.
+
+See:
+
+- [docs/DATA_CONTRACT.md](docs/DATA_CONTRACT.md)
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)
+
+## Stack
+
+Next.js App Router · TypeScript · Tailwind CSS · Prisma 6 · Neon PostgreSQL · Zod · csv-parse · Vitest · Docker
+
+## Environment setup
+
+1. Copy the example env file (safe placeholders only):
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Fill in Neon connection strings from the Neon Console → **Connect**:
+   - `DATABASE_URL` — **pooled** (`-pooler` host) for the app
+   - `DATABASE_URL_UNPOOLED` — **direct** host for Prisma migrations
+3. Do **not** commit `.env` or `.env.local`.
+
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | Pooled Neon URL used by Prisma Client (`PrismaNeon`) |
+| `DATABASE_URL_UNPOOLED` | Direct Neon URL used by Prisma Migrate / CLI |
+| `MAX_UPLOAD_BYTES` | Max CSV upload size in bytes |
+
+`.env.example` is tracked in Git. `.env` and `.env.*` (except `.env.example`) are ignored.
+
+## Local database setup
+
+This project uses **Neon PostgreSQL** via Prisma + `@prisma/adapter-neon`.
 
 ```bash
+npm install
+npx prisma migrate deploy
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Runtime queries use the pooled `DATABASE_URL`.
+- Migrations use `DATABASE_URL_UNPOOLED` (`directUrl` in `prisma/schema.prisma`).
+- Inspect data with `npx prisma studio` if needed.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Sample data (not in Git)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`sample-data/` is **excluded from Git** and must be obtained separately (assignment pack).
 
-## Learn More
+Do **not** commit:
 
-To learn more about Next.js, take a look at the following resources:
+- `students_sample.csv`
+- `students_small.csv`
+- `sample-data/README.md`
+- any other files under `sample-data/`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Place the pack at the repo root as `sample-data/` for local testing only. Never put assignment CSVs under `public/`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Development server |
+| `npm run build` | Production build |
+| `npm run lint` | ESLint |
+| `npm test` | Vitest |
+| `npm run db:migrate` | Create/apply migrations |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Docker
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Provide Neon env vars from the host (never bake secrets into the image):
+
+```bash
+docker compose up --build
+```
+
+## Security notes before pushing to GitHub
+
+- Confirm `.env` is not staged.
+- Confirm `sample-data/` is not staged.
+- Rotate any credential that was ever pasted into a local `.env` if you are unsure whether it was shared.

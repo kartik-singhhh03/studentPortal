@@ -1,0 +1,72 @@
+// Es Magico Student Results Portal — Prisma schema (Prisma 6 + Neon PostgreSQL)
+// DATABASE_URL: pooled connection (app runtime via PrismaNeon)
+// DATABASE_URL_UNPOOLED: direct connection (Prisma Migrate / CLI)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+enum ImportStatus {
+  COMPLETED
+  FAILED
+  SKIPPED_IDENTICAL
+}
+
+model Student {
+  id             String   @id @default(cuid())
+  studentId      String   @unique
+  fullName       String
+  email          String
+  dateOfBirth    DateTime
+  gradeLevel     Int
+  section        String
+  maths          Float
+  science        Float
+  english        Float
+  socialStudies  Float
+  secondLanguage Float
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([fullName])
+  @@index([gradeLevel])
+  @@index([section])
+  @@index([gradeLevel, section])
+  @@map("students")
+}
+
+model ImportBatch {
+  id           String        @id @default(cuid())
+  filename     String
+  fileHash     String        @unique
+  totalRows    Int
+  importedRows Int
+  rejectedRows Int
+  status       ImportStatus
+  importedAt   DateTime      @default(now())
+  errors       ImportError[]
+
+  @@index([importedAt])
+  @@map("import_batches")
+}
+
+model ImportError {
+  id            String      @id @default(cuid())
+  importBatchId String
+  importBatch   ImportBatch @relation(fields: [importBatchId], references: [id], onDelete: Cascade)
+  rowNumber     Int
+  studentId     String?
+  field         String?
+  errorCode     String
+  message       String
+
+  @@index([importBatchId])
+  @@index([importBatchId, rowNumber])
+  @@map("import_errors")
+}
