@@ -48,8 +48,10 @@ model ImportBatch {
   totalRows    Int
   importedRows Int
   rejectedRows Int
+  skippedRows  Int           @default(0)
   status       ImportStatus
   importedAt   DateTime      @default(now())
+  completedAt  DateTime?
   errors       ImportError[]
 
   @@index([importedAt])
@@ -57,14 +59,15 @@ model ImportBatch {
 }
 
 model ImportError {
-  id            String      @id @default(cuid())
-  importBatchId String
-  importBatch   ImportBatch @relation(fields: [importBatchId], references: [id], onDelete: Cascade)
-  rowNumber     Int
-  studentId     String?
-  field         String?
-  errorCode     String
-  message       String
+  id             String      @id @default(cuid())
+  importBatchId  String
+  importBatch    ImportBatch @relation(fields: [importBatchId], references: [id], onDelete: Cascade)
+  rowNumber      Int
+  studentId      String?
+  field          String?
+  errorCode      String
+  message        String
+  rejectedValue  String?
 
   @@index([importBatchId])
   @@index([importBatchId, rowNumber])

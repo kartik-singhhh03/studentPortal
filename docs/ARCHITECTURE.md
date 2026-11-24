@@ -30,11 +30,12 @@ Business rules must not live inside React components.
 
 ## Database decisions
 
-1. **Within one file**: first normalized `student_id` wins; later rows → `DUPLICATE_ID`. The first sighting still reserves the ID even if that row is otherwise invalid.
+1. **Within one file**: first normalized `student_id` wins; later rows → `DUPLICATE_ID`. The first sighting still reserves the ID even if that row is otherwise invalid (assignment rule; not “first valid wins”).
 2. **Across files**: valid rows **upsert** by normalized `student_id`.
-3. **Identical re-upload**: SHA-256 of file bytes; unique `ImportBatch.fileHash`; status `SKIPPED_IDENTICAL`; no reprocessing.
+3. **Identical re-upload**: SHA-256 of file bytes; unique `ImportBatch.fileHash`; response status `SKIPPED_IDENTICAL` pointing at the original batch; no second batch.
 4. **No permanent CSV storage**: only batch metadata and error rows.
 5. **Marks**: stored as floats; grades computed on read via `grading.ts`, not denormalized columns (keeps one grading source of truth).
+6. **Persistence strategy**: validate in memory (upload size capped), then upsert students in chunks of 100 and insert errors in chunks of 250. Avoids one giant transaction while keeping each chunk atomic. If persistence fails after batch creation, the batch is marked `FAILED`.
 
 ## API design
 

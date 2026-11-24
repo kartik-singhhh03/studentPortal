@@ -50,8 +50,9 @@ When several independent field validations fail on one row, report each field-sp
 
 - The first occurrence of a normalized student ID in a file is the original, even if that row fails other validations.
 - Later rows with the same normalized ID are rejected as `DUPLICATE_ID`.
+- This follows the assignment wording (“first row with a given ID”), not a “first valid row wins” rule.
 - Across different files, a valid row upserts the existing student by normalized `student_id`.
-- Identical file re-upload (same SHA-256 content hash) is idempotent: do not reprocess; return the prior import batch.
+- Identical file re-upload (same SHA-256 content hash) is idempotent: do not reprocess; return `SKIPPED_IDENTICAL` with the original import batch id.
 
 ## Rows read vs accepted vs rejected
 

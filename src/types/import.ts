@@ -24,10 +24,16 @@ export const REQUIRED_CSV_HEADERS = [
 
 export type RequiredCsvHeader = (typeof REQUIRED_CSV_HEADERS)[number];
 
+export type ImportBatchStatus =
+  | "COMPLETED"
+  | "FAILED"
+  | "SKIPPED_IDENTICAL";
+
 export interface FieldValidationError {
   field: RequiredCsvHeader | null;
   code: ImportErrorCode;
   message: string;
+  rejectedValue?: string | null;
 }
 
 export interface ValidatedStudentRow {
@@ -42,4 +48,40 @@ export interface ValidatedStudentRow {
   english: number;
   socialStudies: number;
   secondLanguage: number;
+}
+
+export interface RowValidationResult {
+  rowNumber: number;
+  studentId: string | null;
+  accepted: ValidatedStudentRow | null;
+  errors: FieldValidationError[];
+}
+
+export interface ParsedCsvRow {
+  rowNumber: number;
+  fields: string[];
+}
+
+export interface ParsedCsvFile {
+  headers: string[];
+  headerMap: Map<RequiredCsvHeader, number>;
+  rows: ParsedCsvRow[];
+  skippedRows: number;
+  rowsRead: number;
+}
+
+export interface ImportSummary {
+  importId: string;
+  filename: string;
+  status: ImportBatchStatus;
+  totalRows: number;
+  acceptedRows: number;
+  rejectedRows: number;
+  skippedRows: number;
+  errorCount: number;
+  fileHash: string;
+  identicalUpload: boolean;
+  originalImportId: string | null;
+  importedAt: string;
+  completedAt: string;
 }
