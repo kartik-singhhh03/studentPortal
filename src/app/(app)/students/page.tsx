@@ -47,38 +47,44 @@ export default async function StudentsPage({
   const q = params.get("q") ?? "";
   const gradeLevel = params.get("gradeLevel") ?? "";
   const section = params.get("section") ?? "";
+  const hasFilters = Boolean(q || gradeLevel || section);
 
   return (
     <div>
       <PageHeader
         title="Students"
-        description="Search and browse imported student records."
+        description={`${result.total.toLocaleString()} student${result.total === 1 ? "" : "s"} in the portal.`}
       />
 
-      <Suspense fallback={<Skeleton className="mb-6 h-24 w-full" />}>
+      <Suspense fallback={<Skeleton className="mb-6 h-28 w-full" />}>
         <StudentsToolbar
           initialQ={q}
           initialGradeLevel={gradeLevel}
           initialSection={section}
+          total={result.total}
         />
       </Suspense>
 
       {result.total === 0 ? (
         <EmptyState
-          title="No students found"
-          description="Try clearing filters, or import a CSV to add students."
+          title={hasFilters ? "No matching students" : "No students found"}
+          description={
+            hasFilters
+              ? "Try clearing filters, or adjust the search terms."
+              : "Import a CSV to add students."
+          }
           action={
             <Link
-              href="/import"
-              className="rounded border border-near-black bg-near-black px-3 py-2 text-sm font-medium text-white"
+              href={hasFilters ? "/students" : "/import"}
+              className="rounded-[var(--radius-sm)] border border-near-black bg-near-black px-3 py-2 text-sm font-medium text-white"
             >
-              Import CSV
+              {hasFilters ? "Clear filters" : "Import CSV"}
             </Link>
           }
         />
       ) : (
         <>
-          <div className="overflow-x-auto rounded border border-border bg-white">
+          <div className="surface overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-border bg-off-white text-xs uppercase tracking-wide text-neutral">
                 <tr>
@@ -94,23 +100,23 @@ export default async function StudentsPage({
                 {result.items.map((student) => (
                   <tr
                     key={student.studentId}
-                    className="border-b border-border last:border-0"
+                    className="table-row-hover border-b border-border last:border-0"
                   >
-                    <td className="px-4 py-3 font-mono text-xs text-charcoal">
+                    <td className="px-4 py-3.5 font-mono text-xs text-charcoal">
                       {student.studentId}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       <div className="font-medium text-near-black">
                         {student.fullName}
                       </div>
                       <div className="text-xs text-neutral">{student.email}</div>
                     </td>
-                    <td className="px-4 py-3 text-charcoal">
+                    <td className="px-4 py-3.5 text-charcoal">
                       {student.gradeLevel}
                     </td>
-                    <td className="px-4 py-3 text-charcoal">{student.section}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                    <td className="px-4 py-3.5 text-charcoal">{student.section}</td>
+                    <td className="px-4 py-3.5">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium">{student.letterGrade}</span>
                         <span className="text-neutral">
                           {formatPercent(student.percentage)}
@@ -120,12 +126,12 @@ export default async function StudentsPage({
                         </Badge>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3.5 text-right">
                       <Link
                         href={`/students/${encodeURIComponent(student.studentId)}`}
                         className="text-sm font-medium text-near-black underline-offset-2 hover:underline"
                       >
-                        View
+                        Report
                       </Link>
                     </td>
                   </tr>

@@ -33,5 +33,6 @@ describe("format helpers", () => {
     expect(formatBytes(2048)).toContain("KB");
     expect(formatPercent(91.25)).toBe("91.3%");
     expect(importStatusLabel("SKIPPED_IDENTICAL")).toContain("identical");
+    expect(importStatusLabel("PROCESSING")).toBe("Processing");
   });
 });

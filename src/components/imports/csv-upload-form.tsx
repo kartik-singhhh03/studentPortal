@@ -6,6 +6,7 @@ import { ImportCounts } from "@/components/imports/import-counts";
 import { ImportStatusBadge } from "@/components/imports/import-status-badge";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
+import { ProgressIndeterminate } from "@/components/ui/progress-indeterminate";
 import { ApiError, parseJsonResponse } from "@/lib/api/http";
 import { formatBytes, formatDateTime } from "@/lib/format";
 import type { ImportSummary } from "@/types/import";
@@ -19,19 +20,26 @@ type UploadErrorRow = {
   rejectedValue: string | null;
 };
 
-const DEFAULT_MAX = 5 * 1024 * 1024;
+type UploadPhase = "idle" | "uploading" | "processing";
+
+const DEFAULT_MAX = 4 * 1024 * 1024;
 
 export function CsvUploadForm() {
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [clientError, setClientError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [phase, setPhase] = useState<UploadPhase>("idle");
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [errors, setErrors] = useState<UploadErrorRow[]>([]);
   const [errorTotal, setErrorTotal] = useState(0);
   const [errorPage, setErrorPage] = useState(1);
   const [maxUploadBytes, setMaxUploadBytes] = useState(DEFAULT_MAX);
+  const [inProgressImportId, setInProgressImportId] = useState<string | null>(
+    null,
+  );
+
+  const busy = phase !== "idle";
 
   useEffect(() => {
     fetch("/api/config")
@@ -51,6 +59,7 @@ export function CsvUploadForm() {
       setSummary(null);
       setErrors([]);
       setErrorTotal(0);
+      setInProgressImportId(null);
       if (!next) {
         setFile(null);
         return;
@@ -87,17 +96,20 @@ export function CsvUploadForm() {
     [validateFile],
   );
 
-  const canUpload = Boolean(file) && !uploading;
+  const canUpload = Boolean(file) && !busy;
 
   const resultMessage = useMemo(() => {
     if (!summary) return null;
     if (summary.status === "SKIPPED_IDENTICAL") {
-      return "This file was already imported. No changes were made.";
+      return "This file was already imported successfully. No changes were made.";
+    }
+    if (summary.status === "FAILED") {
+      return "Import failed after processing started. You can retry the same file; accepted students already written will be upserted safely.";
     }
     if (summary.rejectedRows === 0) {
       return "Import completed successfully. All processed rows were accepted.";
     }
-    return "Import completed with some rejected rows. Review the validation errors below.";
+    return "Import completed with some rejected rows. Review the validation errors below. Blank rows are listed separately and are not part of processed totals.";
   }, [summary]);
 
   async function loadErrors(importId: string, page: number) {
@@ -115,12 +127,15 @@ export function CsvUploadForm() {
   }
 
   async function onUpload() {
-    if (!file || uploading) return;
-    setUploading(true);
+    if (!file || busy) return;
+    setPhase("uploading");
     setServerError(null);
+    setSummary(null);
+    setInProgressImportId(null);
     try {
       const form = new FormData();
       form.append("file", file);
+      setPhase("processing");
       const response = await fetch("/api/imports", {
         method: "POST",
         body: form,
@@ -139,13 +154,19 @@ export function CsvUploadForm() {
         setErrorTotal(0);
       }
     } catch (error) {
-      const message =
-        error instanceof ApiError
-          ? error.message
-          : "Upload failed. Please try again.";
-      setServerError(message);
+      if (error instanceof ApiError && error.code === "IMPORT_IN_PROGRESS") {
+        setServerError(error.message);
+        const importId = error.details?.importId;
+        setInProgressImportId(typeof importId === "string" ? importId : null);
+      } else {
+        const message =
+          error instanceof ApiError
+            ? error.message
+            : "Upload failed. Please try again.";
+        setServerError(message);
+      }
     } finally {
-      setUploading(false);
+      setPhase("idle");
     }
   }
 
@@ -153,6 +174,13 @@ export function CsvUploadForm() {
     summary?.status === "SKIPPED_IDENTICAL" && summary.originalImportId
       ? summary.originalImportId
       : summary?.importId;
+
+  const phaseLabel =
+    phase === "uploading"
+      ? "Uploading file…"
+      : phase === "processing"
+        ? "Processing CSV — validating and writing to the database…"
+        : null;
 
   return (
     <div className="space-y-6">
@@ -163,8 +191,10 @@ export function CsvUploadForm() {
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
-        className={`rounded border border-dashed bg-white px-6 py-10 text-center ${
-          dragOver ? "border-near-black bg-off-white" : "border-border"
+        className={`dropzone surface px-6 py-10 text-center ${
+          dragOver
+            ? "border-near-black bg-off-white shadow-[var(--shadow-md)]"
+            : "border-dashed"
         }`}
       >
         <p className="text-sm font-medium text-near-black">
@@ -174,12 +204,13 @@ export function CsvUploadForm() {
           or choose a file · max {formatBytes(maxUploadBytes)}
         </p>
         <div className="mt-4">
-          <label className="inline-flex cursor-pointer items-center rounded border border-border bg-white px-3 py-2 text-sm font-medium text-near-black hover:bg-off-white">
+          <label className="inline-flex cursor-pointer items-center rounded-[var(--radius-sm)] border border-border bg-white px-3 py-2 text-sm font-medium text-near-black transition-colors hover:bg-off-white">
             Choose file
             <input
               type="file"
               accept=".csv,text/csv"
               className="sr-only"
+              disabled={busy}
               onChange={(event) =>
                 validateFile(event.target.files?.[0] ?? null)
               }
@@ -189,7 +220,7 @@ export function CsvUploadForm() {
       </div>
 
       {file ? (
-        <div className="flex flex-col gap-3 rounded border border-border bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="surface flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm">
             <p className="font-medium text-near-black">{file.name}</p>
             <p className="text-neutral">{formatBytes(file.size)}</p>
@@ -199,22 +230,33 @@ export function CsvUploadForm() {
               type="button"
               variant="secondary"
               onClick={() => validateFile(null)}
-              disabled={uploading}
+              disabled={busy}
             >
               Remove
             </Button>
             <Button type="button" onClick={onUpload} disabled={!canUpload}>
-              {uploading ? "Uploading…" : "Upload CSV"}
+              {busy ? "Working…" : "Upload CSV"}
             </Button>
           </div>
         </div>
       ) : null}
 
+      {phaseLabel ? <ProgressIndeterminate label={phaseLabel} /> : null}
+
       {clientError ? <ErrorState message={clientError} /> : null}
-      {serverError ? <ErrorState message={serverError} /> : null}
+      {serverError ? (
+        <ErrorState
+          title={
+            inProgressImportId || serverError.includes("already being imported")
+              ? "Import already in progress"
+              : "Upload failed"
+          }
+          message={serverError}
+        />
+      ) : null}
 
       {summary ? (
-        <section className="rounded border border-border bg-white p-5">
+        <section className="surface p-5">
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-base font-medium text-near-black">
               Import result
@@ -250,7 +292,7 @@ export function CsvUploadForm() {
               skippedRows={summary.skippedRows}
             />
             <p className="mt-2 text-sm text-neutral">
-              Error records: {summary.errorCount}
+              Validation error records: {summary.errorCount}
             </p>
           </div>
 
@@ -276,7 +318,7 @@ export function CsvUploadForm() {
       ) : null}
 
       {errors.length > 0 ? (
-        <section className="overflow-hidden rounded border border-border bg-white">
+        <section className="surface overflow-hidden">
           <div className="border-b border-border px-4 py-3">
             <h3 className="text-sm font-medium text-near-black">
               Validation errors
@@ -296,7 +338,7 @@ export function CsvUploadForm() {
                 {errors.map((error) => (
                   <tr
                     key={`${error.rowNumber}-${error.field}-${error.errorCode}-${error.message}`}
-                    className="border-b border-border last:border-0"
+                    className="table-row-hover border-b border-border last:border-0"
                   >
                     <td className="px-4 py-3 font-mono text-xs">
                       {error.rowNumber}
@@ -320,7 +362,7 @@ export function CsvUploadForm() {
                 <Button
                   type="button"
                   variant="secondary"
-                  disabled={errorPage <= 1 || uploading}
+                  disabled={errorPage <= 1 || busy}
                   onClick={() => loadErrors(activeImportId, errorPage - 1)}
                 >
                   Previous
@@ -328,7 +370,7 @@ export function CsvUploadForm() {
                 <Button
                   type="button"
                   variant="secondary"
-                  disabled={errorPage * 20 >= errorTotal || uploading}
+                  disabled={errorPage * 20 >= errorTotal || busy}
                   onClick={() => loadErrors(activeImportId, errorPage + 1)}
                 >
                   Next

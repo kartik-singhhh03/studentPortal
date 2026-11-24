@@ -1,6 +1,4 @@
-# Design System — Frontend Implementation Notes
-
-Phase 1 records these requirements only. UI screens are implemented in a later phase.
+# Design System — Es Magico Student Results Portal
 
 ## Colour palette
 
@@ -13,19 +11,22 @@ Phase 1 records these requirements only. UI screens are implemented in a later p
 | Off-white | `#FAFAFA` | Page background |
 | White | `#FFFFFF` | Surfaces, tables, forms |
 
-Semantic colours are reserved for success, warning, and error states only.
+Semantic colours (success / warning / error) are reserved for status only.
+
+## Tokens (CSS)
+
+Defined in `src/app/globals.css`: radius (`--radius-sm/md`), shadows (`--shadow-sm/md`), motion (`--duration-fast/normal`, `--ease-out`). Utility classes: `.surface`, `.page-enter`, `.table-row-hover`, `.dropzone`, `.progress-indeterminate`, `.skeleton-shimmer`.
 
 ## Principles
 
-- Premium, minimal, professional monochrome SaaS dashboard
-- Typography: Geist (project default) or Inter
-- Generous whitespace; consistent spacing and alignment
-- Thin borders and subtle shadows
-- Clear hierarchy; excellent readability and accessibility
-- Responsive desktop and mobile layouts
+- Premium, minimal, professional monochrome SaaS
+- Typography: Geist
+- Consistent spacing; thin borders; subtle shadows
+- Clear hierarchy; accessible focus rings
+- Responsive desktop, tablet, and mobile
+- Motion ~150–200ms; respect `prefers-reduced-motion`
 
 ## Avoid
 
-- Excessive gradients, neon or saturated colours
-- Glassmorphism, excessive animation, decorative clutter
-- Giant rounded cards, overly colourful dashboards
+- Flashy gradients, neon colours, glassmorphism
+- Decorative charts, oversized cards, excessive animation

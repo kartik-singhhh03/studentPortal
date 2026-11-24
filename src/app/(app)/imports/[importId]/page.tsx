@@ -76,14 +76,14 @@ export default async function ImportDetailPage({
           <>
             <Link
               href="/imports"
-              className="rounded border border-border bg-white px-3 py-2 text-sm hover:bg-off-white"
+              className="rounded-[var(--radius-sm)] border border-border bg-white px-3 py-2 text-sm transition-colors hover:bg-off-white"
             >
               Back
             </Link>
             {summary.errorCount > 0 ? (
               <a
                 href={`/api/imports/${importId}/errors/download`}
-                className="rounded border border-near-black bg-near-black px-3 py-2 text-sm font-medium text-white"
+                className="rounded-[var(--radius-sm)] border border-near-black bg-near-black px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-charcoal"
               >
                 Download errors
               </a>
@@ -92,11 +92,14 @@ export default async function ImportDetailPage({
         }
       />
 
-      <section className="rounded border border-border bg-white p-5">
+      <section className="surface p-5">
         <div className="flex flex-wrap items-center gap-3">
           <ImportStatusBadge status={summary.status} />
           <span className="text-sm text-neutral">
-            Imported {formatDateTime(summary.importedAt)}
+            Started {formatDateTime(summary.importedAt)}
+            {summary.completedAt
+              ? ` · Finished ${formatDateTime(summary.completedAt)}`
+              : ""}
           </span>
         </div>
         <div className="mt-4">
@@ -107,7 +110,11 @@ export default async function ImportDetailPage({
             skippedRows={summary.skippedRows}
           />
           <p className="mt-2 text-sm text-neutral">
-            Error records: {summary.errorCount}
+            Validation error records: {summary.errorCount}
+          </p>
+          <p className="mt-1 text-xs text-neutral">
+            Processed rows = accepted + rejected. Blank rows are skipped and
+            counted separately.
           </p>
         </div>
       </section>
@@ -123,7 +130,7 @@ export default async function ImportDetailPage({
           />
         ) : (
           <>
-            <div className="overflow-x-auto rounded border border-border bg-white">
+            <div className="surface overflow-x-auto">
               <table className="min-w-full text-left text-sm">
                 <thead className="border-b border-border bg-off-white text-xs uppercase tracking-wide text-neutral">
                   <tr>
@@ -139,7 +146,7 @@ export default async function ImportDetailPage({
                   {errors.items.map((error) => (
                     <tr
                       key={error.id}
-                      className="border-b border-border last:border-0"
+                      className="table-row-hover border-b border-border last:border-0"
                     >
                       <td className="px-4 py-3 font-mono text-xs">
                         {error.rowNumber}

@@ -120,10 +120,13 @@ describeDb("CSV import integration (Neon)", () => {
       first.summary.fileHash,
     );
 
-    const batchCount = await prisma.importBatch.count({
-      where: { fileHash: first.summary.fileHash },
+    const completedCount = await prisma.importBatch.count({
+      where: {
+        fileHash: first.summary.fileHash,
+        status: "COMPLETED",
+      },
     });
-    expect(batchCount).toBe(1);
+    expect(completedCount).toBe(1);
     },
     60_000,
   );
@@ -167,5 +170,61 @@ describeDb("CSV import integration (Neon)", () => {
     expect(count).toBe(1);
     },
     60_000,
+  );
+
+  it(
+    "persists a medium CSV without interactive transactions (large-file behavior)",
+    async () => {
+      const marker = randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
+      const header =
+        "student_id,full_name,email,date_of_birth,grade_level,section,maths,science,english,social_studies,second_language";
+      const rows: string[] = [];
+      const studentIds: string[] = [];
+      for (let i = 0; i < 120; i += 1) {
+        const id = `L${marker}${String(i).padStart(3, "0")}`;
+        studentIds.push(id);
+        rows.push(
+          `${id},Load Test ${i},load.${marker}.${i}@example.edu,2012-01-01,8,A,80,81,82,83,84`,
+        );
+      }
+      // Two invalid rows + one blank to exercise counters alongside volume.
+      rows.push(
+        `L${marker}BAD,Bad,not-an-email,2012-01-01,8,A,80,81,82,83,84`,
+      );
+      rows.push("");
+      rows.push(
+        `L${marker}BAD2,,missing@example.edu,2012-01-01,8,A,80,81,82,83,84`,
+      );
+
+      const csv = Buffer.from([header, ...rows].join("\n"), "utf8");
+      const result = await processCsvImport({
+        filename: `load-${marker}.csv`,
+        bytes: csv,
+        importDate: new Date("2026-11-24"),
+      });
+
+      createdBatchIds.push(result.summary.importId);
+      createdStudentIds.push(...studentIds);
+
+      expect(result.httpStatus).toBe(201);
+      expect(result.summary.status).toBe("COMPLETED");
+      expect(result.summary.totalRows).toBe(122);
+      expect(result.summary.acceptedRows).toBe(120);
+      expect(result.summary.rejectedRows).toBe(2);
+      expect(result.summary.skippedRows).toBe(1);
+
+      const persisted = await prisma.student.count({
+        where: { studentId: { in: studentIds } },
+      });
+      expect(persisted).toBe(120);
+
+      const batch = await prisma.importBatch.findUnique({
+        where: { id: result.summary.importId },
+      });
+      expect(batch?.importedRows).toBe(120);
+      expect(batch?.rejectedRows).toBe(2);
+      expect(batch?.completedAt).not.toBeNull();
+    },
+    180_000,
   );
 });

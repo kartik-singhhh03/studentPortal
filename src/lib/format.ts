@@ -23,6 +23,8 @@ export function formatMark(value: number): string {
 
 export function importStatusLabel(status: string): string {
   switch (status) {
+    case "PROCESSING":
+      return "Processing";
     case "COMPLETED":
       return "Completed";
     case "FAILED":

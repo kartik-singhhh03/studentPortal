@@ -69,59 +69,83 @@ export default async function StudentDetailPage({ params }: RouteContext) {
         actions={
           <Link
             href="/students"
-            className="rounded border border-border bg-white px-3 py-2 text-sm text-near-black hover:bg-off-white"
+            className="rounded-[var(--radius-sm)] border border-border bg-white px-3 py-2 text-sm text-near-black transition-colors hover:bg-off-white"
           >
             Back to students
           </Link>
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-        <section className="rounded border border-border bg-white p-5">
-          <h2 className="text-sm font-medium text-near-black">Details</h2>
+      <section className="surface mb-6 p-5 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-neutral">
+              Overall result
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <p className="text-3xl font-semibold tracking-tight text-near-black">
+                {student.letterGrade}
+              </p>
+              <Badge tone={student.passed ? "success" : "danger"}>
+                {student.passed ? "Pass" : "Fail"}
+              </Badge>
+            </div>
+          </div>
+          <dl className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm sm:text-right">
+            <div>
+              <dt className="text-neutral">Total marks</dt>
+              <dd className="font-medium text-near-black">
+                {formatMark(student.totalMarks)} / 500
+              </dd>
+            </div>
+            <div>
+              <dt className="text-neutral">Percentage</dt>
+              <dd className="font-medium text-near-black">
+                {formatPercent(student.percentage)}
+              </dd>
+            </div>
+          </dl>
+        </div>
+        {student.failedSubjects.length > 0 ? (
+          <p className="mt-4 text-xs text-error">
+            Below subject pass mark (35): {student.failedSubjects.join(", ")}
+          </p>
+        ) : (
+          <p className="mt-4 text-xs text-neutral">
+            All subjects meet the minimum mark of 35. Pass also requires ≥40%
+            overall.
+          </p>
+        )}
+      </section>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="surface p-5">
+          <h2 className="text-sm font-medium text-near-black">
+            Student details
+          </h2>
           <dl className="mt-4 grid gap-3 sm:grid-cols-2">
             <Detail label="Email" value={student.email} />
             <Detail label="Date of birth" value={student.dateOfBirth} />
             <Detail label="Age" value={String(student.age)} />
             <Detail label="Grade" value={String(student.gradeLevel)} />
             <Detail label="Section" value={student.section} />
-            <Detail
-              label="Result"
-              value={
-                <Badge tone={student.passed ? "success" : "danger"}>
-                  {student.passed ? "Pass" : "Fail"} · {student.letterGrade} ·{" "}
-                  {formatPercent(student.percentage)}
-                </Badge>
-              }
-            />
+            <Detail label="Student ID" value={student.studentId} />
           </dl>
         </section>
 
-        <section className="rounded border border-border bg-white p-5">
-          <h2 className="text-sm font-medium text-near-black">Overall</h2>
-          <dl className="mt-4 space-y-3 text-sm">
-            <div className="flex justify-between">
-              <dt className="text-neutral">Total marks</dt>
-              <dd className="font-medium">{formatMark(student.totalMarks)} / 500</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-neutral">Percentage</dt>
-              <dd className="font-medium">{formatPercent(student.percentage)}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-neutral">Letter grade</dt>
-              <dd className="font-medium">{student.letterGrade}</dd>
-            </div>
-            {student.failedSubjects.length > 0 ? (
-              <p className="text-xs text-[#991b1b]">
-                Below subject pass mark (35): {student.failedSubjects.join(", ")}
-              </p>
-            ) : null}
-          </dl>
+        <section className="surface p-5">
+          <h2 className="text-sm font-medium text-near-black">
+            Grading scheme
+          </h2>
+          <ul className="mt-4 space-y-2 text-sm text-charcoal">
+            <li>A ≥ 90% · B ≥ 75% · C ≥ 60% · D ≥ 40% · F &lt; 40%</li>
+            <li>Pass: overall ≥ 40% and every subject ≥ 35</li>
+            <li>Failing a subject forces Fail even if overall percentage is high</li>
+          </ul>
         </section>
       </div>
 
-      <section className="mt-6 overflow-hidden rounded border border-border bg-white">
+      <section className="surface mt-4 overflow-hidden">
         <div className="border-b border-border px-5 py-3">
           <h2 className="text-sm font-medium text-near-black">Subject marks</h2>
         </div>
@@ -137,12 +161,15 @@ export default async function StudentDetailPage({ params }: RouteContext) {
             {subjects.map((subject) => {
               const failed = student.failedSubjects.includes(subject.key);
               return (
-                <tr key={subject.key} className="border-b border-border last:border-0">
-                  <td className="px-5 py-3 text-near-black">{subject.label}</td>
-                  <td className="px-5 py-3 font-medium">
+                <tr
+                  key={subject.key}
+                  className="table-row-hover border-b border-border last:border-0"
+                >
+                  <td className="px-5 py-3.5 text-near-black">{subject.label}</td>
+                  <td className="px-5 py-3.5 font-medium">
                     {formatMark(subject.value)}
                   </td>
-                  <td className="px-5 py-3">
+                  <td className="px-5 py-3.5">
                     <Badge tone={failed ? "danger" : "success"}>
                       {failed ? "Below 35" : "OK"}
                     </Badge>

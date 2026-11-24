@@ -2,26 +2,32 @@
 
 ## Stack and why
 
-- **Next.js App Router + TypeScript**: one codebase for UI and APIs; Route Handlers replace a separate Express server.
-- **Neon PostgreSQL + Prisma 6 + `@prisma/adapter-neon`**: managed Postgres with pooled runtime connections and direct URL for migrations.
-- **Zod + csv-parse + Vitest**: shared validation, robust CSV parsing, and regression tests around import behaviour.
+Next.js App Router + TypeScript for UI and APIs in one repo. Neon PostgreSQL with Prisma 6 + `@prisma/adapter-neon` for pooled serverless queries and a direct URL for migrations. Zod + csv-parse for validation/parsing; Vitest for regressions. Monochrome Tailwind UI—no extra UI framework.
 
-## Important decisions
+## Data model and API
 
-1. **Duplicate IDs in one file:** first occurrence wins even if invalid; later rows are `DUPLICATE_ID`. Source: assignment sample README / DATA_CONTRACT. Not “first valid wins”.
-2. **Identical file re-upload:** SHA-256 hash; return `SKIPPED_IDENTICAL` without reprocessing.
-3. **Cross-file duplicates:** upsert by normalized student ID.
-4. **Skipped rows:** blank/empty-field lines are skipped and **not** included in `totalRows`. UI shows them separately from accepted/rejected.
-5. **Grading:** one module (`src/lib/grading.ts`) — A/B/C/D/F bands, pass requires ≥40% overall and ≥35 in every subject.
-6. **Frontend:** Server Components for data pages; Client Components only for upload/search/nav. Monochrome SaaS UI.
+`Student` (unique `studentId`), `ImportBatch` (hash + counters + status), `ImportError` (row-level reasons). REST Route Handlers under `/api/*`. Partial unique index on `fileHash` for active/successful batches so FAILED history can share a hash.
 
-## What is missing / next
+## Valid vs invalid rows
 
-- Optional background job queue for very large imports.
-- Auth / role-based access for administrators.
-- Richer dashboard charts (kept intentionally simple).
-- Full end-to-end persist of the 5,000-row sample in CI (validation acceptance is covered).
+A valid row passes required fields, formats, ranges, and age rules (see DATA_CONTRACT). Administrators see rejected rows with field, code, message, and rejected value; formula-safe CSV download available. Blank lines are **skipped** and counted separately—not in `totalRows`.
 
-## How to run
+## Duplicates and identical files
 
-See README. Use `.env.example` → `.env` with Neon pooled + unpooled URLs, then `npm install`, `npx prisma migrate deploy`, `npm run dev`.
+In one file, **first occurrence wins** (even if invalid); later IDs are `DUPLICATE_ID`. Cross-file: upsert by normalized ID. Identical bytes (SHA-256): `SKIPPED_IDENTICAL` if a COMPLETED batch exists. FAILED imports are retryable via a **new** PROCESSING batch; concurrent identical uploads get `409 IMPORT_IN_PROGRESS`. Progress uses atomic `importedRows` increments.
+
+## Bad files and large imports
+
+Non-CSV / empty / oversized files are rejected before parse. Default max upload is **4 MiB** (under Vercel’s ~4.5 MB body limit). Large imports use bounded concurrent upserts; `POST /api/imports` allows up to 60s on supporting plans. Multi-minute background queues are intentionally out of scope.
+
+## Grading
+
+`src/lib/grading.ts` only: A/B/C/D/F bands; pass needs ≥40% overall and ≥35 in every subject.
+
+## Build order / intentional omissions
+
+Foundation → import engine → portal UI → acceptance/recovery → polish/Vercel docs. Omitted: auth (not required), queues, Blob storage for huge files. Auth should be added before any public school deployment.
+
+## Remaining limitations
+
+Hobby Vercel duration may timeout on full 5k-row sync imports; prefer Pro or smaller files for demos. No auth. Upserts from a failed mid-import are not rolled back (honest FAILED counters + safe retry).

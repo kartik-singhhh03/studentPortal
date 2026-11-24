@@ -13,6 +13,7 @@ datasource db {
 }
 
 enum ImportStatus {
+  PROCESSING
   COMPLETED
   FAILED
   SKIPPED_IDENTICAL
@@ -44,7 +45,11 @@ model Student {
 model ImportBatch {
   id           String        @id @default(cuid())
   filename     String
-  fileHash     String        @unique
+  /// SHA-256 of file bytes. Uniqueness for active/successful rows is enforced by
+  /// partial unique index `import_batches_fileHash_active_key` (migration SQL):
+  /// UNIQUE(fileHash) WHERE status IN (PROCESSING, COMPLETED, SKIPPED_IDENTICAL).
+  /// Multiple FAILED attempts may share the same hash so history is preserved.
+  fileHash     String
   totalRows    Int
   importedRows Int
   rejectedRows Int
@@ -54,6 +59,7 @@ model ImportBatch {
   completedAt  DateTime?
   errors       ImportError[]
 
+  @@index([fileHash])
   @@index([importedAt])
   @@map("import_batches")
 }

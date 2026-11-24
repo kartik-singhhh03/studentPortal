@@ -1,102 +1,94 @@
 # Es Magico — Student Results Portal
 
-Full-stack Next.js application for the Es Magico Fullstack Internship assignment.
+Full-stack Next.js application for the Es Magico Fullstack Internship assignment: CSV student import, validation, grading, and administrator reporting on Neon PostgreSQL.
 
-## Status
+## Features
 
-Phases 1–3 are implemented: Neon/Prisma foundation, CSV import engine, and the administrator portal UI (dashboard, students, import, import history).
-
-See:
-
-- [docs/DATA_CONTRACT.md](docs/DATA_CONTRACT.md)
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)
+- CSV import with row validation, error reports, and SHA-256 idempotency
+- Failed-import retry without losing historical batches
+- Searchable, filterable, paginated student directory
+- Student reports (marks, total, percentage, grade, pass/fail)
+- Dashboard with live database statistics
+- Docker and Vercel-ready deployment paths
 
 ## Stack
 
-Next.js App Router · TypeScript · Tailwind CSS · Prisma 6 · Neon PostgreSQL · Zod · csv-parse · Vitest · Docker
+Next.js 15 App Router · React 19 · TypeScript · Tailwind CSS 4 · Prisma 6.19 · Neon PostgreSQL · Zod · csv-parse · Vitest
 
-## Environment setup
+## Architecture
 
-1. Copy the example env file (safe placeholders only):
+- **App Router** pages + Route Handlers (no Express)
+- **PrismaNeon** adapter on pooled `DATABASE_URL`; migrations via `DATABASE_URL_UNPOOLED`
+- Domain logic in `src/lib` (import, grading, students); UI in `src/components` / `src/app`
 
-   ```bash
-   cp .env.example .env
-   ```
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DATA_CONTRACT.md](docs/DATA_CONTRACT.md), and [NOTES.md](NOTES.md).
 
-2. Fill in Neon connection strings from the Neon Console → **Connect**:
-   - `DATABASE_URL` — **pooled** (`-pooler` host) for the app
-   - `DATABASE_URL_UNPOOLED` — **direct** host for Prisma migrations
-3. Do **not** commit `.env` or `.env.local`.
+## Prerequisites
 
-| Variable | Purpose |
-|---|---|
-| `DATABASE_URL` | Pooled Neon URL used by Prisma Client (`PrismaNeon`) |
-| `DATABASE_URL_UNPOOLED` | Direct Neon URL used by Prisma Migrate / CLI |
-| `MAX_UPLOAD_BYTES` | Max CSV upload size in bytes |
+- Node.js 20+
+- A Neon project (pooled + direct connection strings)
+- Optional: Docker Desktop for container runs
+- Optional: assignment `sample-data/` pack (gitignored)
 
-`.env.example` is tracked in Git. `.env` and `.env.*` (except `.env.example`) are ignored.
-
-## Local database setup
-
-This project uses **Neon PostgreSQL** via Prisma + `@prisma/adapter-neon`.
+## Setup
 
 ```bash
+cp .env.example .env
+# Fill DATABASE_URL (pooled) and DATABASE_URL_UNPOOLED (direct)
 npm install
 npx prisma migrate deploy
 npm run dev
 ```
 
-- Runtime queries use the pooled `DATABASE_URL`.
-- Migrations use `DATABASE_URL_UNPOOLED` (`directUrl` in `prisma/schema.prisma`).
-- Inspect data with `npx prisma studio` if needed.
+Open http://localhost:3000.
 
-## Sample data (not in Git)
-
-`sample-data/` is **excluded from Git** and must be obtained separately (assignment pack).
-
-Do **not** commit:
-
-- `students_sample.csv`
-- `students_small.csv`
-- `sample-data/README.md`
-- any other files under `sample-data/`
-
-Place the pack at the repo root as `sample-data/` for local testing only. Never put assignment CSVs under `public/`.
-
-## Screens
-
-| Path | Purpose |
+| Variable | Purpose |
 |---|---|
-| `/` | Dashboard statistics and recent imports |
-| `/students` | Searchable, filterable, paginated student list |
-| `/students/[studentId]` | Student report with marks and grading |
-| `/import` | CSV upload and import results |
-| `/imports` | Import history |
-| `/imports/[importId]` | Import detail + paginated errors |
+| `DATABASE_URL` | Pooled Neon URL (app runtime) |
+| `DATABASE_URL_UNPOOLED` | Direct Neon URL (Prisma Migrate) |
+| `MAX_UPLOAD_BYTES` | Max CSV size (default **4 MiB**, Vercel-safe) |
 
-Also see [NOTES.md](NOTES.md) for product decisions.
+Never commit `.env` or `sample-data/`.
 
 ## Scripts
 
 | Command | Purpose |
 |---|---|
 | `npm run dev` | Development server |
-| `npm run build` | Production build |
+| `npm run build` / `npm start` | Production build & serve |
 | `npm run lint` | ESLint |
-| `npm test` | Vitest |
-| `npm run db:migrate` | Create/apply migrations |
+| `npm test` | Vitest (unit + Neon integration when `DATABASE_URL` is set) |
+| `npm run seed` | Load sample CSV or generate messy seed data |
+| `npm run seed -- --generate` | Force-generated messy CSV import |
+| `npx prisma migrate deploy` | Apply migrations |
+
+## Seed
+
+```bash
+npm run seed
+```
+
+Uses `sample-data/students_small.csv` when present; otherwise generates a messy CSV with valid and invalid rows (unique `SEED…` IDs) and imports it. Does not reset the database.
 
 ## Docker
-
-Provide Neon env vars from the host (never bake secrets into the image):
 
 ```bash
 docker compose up --build
 ```
 
-## Security notes before pushing to GitHub
+Requires both Neon URLs in the host `.env`. Health: `GET /api/health`.
 
-- Confirm `.env` is not staged.
-- Confirm `sample-data/` is not staged.
-- Rotate any credential that was ever pasted into a local `.env` if you are unsure whether it was shared.
+## Vercel
+
+See **[docs/VERCEL_DEPLOYMENT.md](docs/VERCEL_DEPLOYMENT.md)** for env vars, migrations, upload limits, and duration notes.
+
+## Screens
+
+| Path | Purpose |
+|---|---|
+| `/` | Dashboard |
+| `/students` | Student list |
+| `/students/[studentId]` | Student report |
+| `/import` | CSV upload |
+| `/imports` | Import history |
+| `/imports/[importId]` | Import detail + errors |

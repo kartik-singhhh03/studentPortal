@@ -44,11 +44,11 @@ export default async function ImportsPage({
     <div>
       <PageHeader
         title="Import history"
-        description="Past CSV uploads and their outcomes."
+        description={`${result.total.toLocaleString()} import batch${result.total === 1 ? "" : "es"} recorded.`}
         actions={
           <Link
             href="/import"
-            className="rounded border border-near-black bg-near-black px-3 py-2 text-sm font-medium text-white"
+            className="rounded-[var(--radius-sm)] border border-near-black bg-near-black px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-charcoal"
           >
             Import CSV
           </Link>
@@ -62,7 +62,7 @@ export default async function ImportsPage({
           action={
             <Link
               href="/import"
-              className="rounded border border-near-black bg-near-black px-3 py-2 text-sm font-medium text-white"
+              className="rounded-[var(--radius-sm)] border border-near-black bg-near-black px-3 py-2 text-sm font-medium text-white"
             >
               Import CSV
             </Link>
@@ -70,7 +70,7 @@ export default async function ImportsPage({
         />
       ) : (
         <>
-          <div className="overflow-x-auto rounded border border-border bg-white">
+          <div className="surface overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-border bg-off-white text-xs uppercase tracking-wide text-neutral">
                 <tr>
@@ -86,15 +86,15 @@ export default async function ImportsPage({
                 {result.items.map((item) => (
                   <tr
                     key={item.importId}
-                    className="border-b border-border last:border-0"
+                    className="table-row-hover border-b border-border last:border-0"
                   >
-                    <td className="px-4 py-3 font-medium text-near-black">
+                    <td className="px-4 py-3.5 font-medium text-near-black">
                       {item.filename}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       <ImportStatusBadge status={item.status} />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       <ImportCounts
                         totalRows={item.totalRows}
                         acceptedRows={item.acceptedRows}
@@ -102,16 +102,16 @@ export default async function ImportsPage({
                         skippedRows={item.skippedRows}
                       />
                     </td>
-                    <td className="px-4 py-3 text-charcoal">{item.errorCount}</td>
-                    <td className="px-4 py-3 text-charcoal">
+                    <td className="px-4 py-3.5 text-charcoal">{item.errorCount}</td>
+                    <td className="px-4 py-3.5 text-charcoal">
                       {formatDateTime(item.importedAt)}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3.5 text-right">
                       <Link
                         href={`/imports/${item.importId}`}
                         className="font-medium underline-offset-2 hover:underline"
                       >
-                        View
+                        Details
                       </Link>
                     </td>
                   </tr>

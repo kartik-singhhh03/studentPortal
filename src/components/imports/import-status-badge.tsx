@@ -9,7 +9,9 @@ export function ImportStatusBadge({ status }: { status: string }) {
         ? "danger"
         : status === "SKIPPED_IDENTICAL"
           ? "warning"
-          : "neutral";
+          : status === "PROCESSING"
+            ? "neutral"
+            : "neutral";
 
   return <Badge tone={tone}>{importStatusLabel(status)}</Badge>;
 }

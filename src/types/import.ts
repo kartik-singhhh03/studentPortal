@@ -25,6 +25,7 @@ export const REQUIRED_CSV_HEADERS = [
 export type RequiredCsvHeader = (typeof REQUIRED_CSV_HEADERS)[number];
 
 export type ImportBatchStatus =
+  | "PROCESSING"
   | "COMPLETED"
   | "FAILED"
   | "SKIPPED_IDENTICAL";

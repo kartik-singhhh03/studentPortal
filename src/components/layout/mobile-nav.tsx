@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NAV_ITEMS } from "@/components/layout/nav-items";
 import { Button } from "@/components/ui/button";
 
@@ -16,10 +16,14 @@ export function MobileNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
   return (
-    <div className="border-b border-border bg-white lg:hidden">
+    <div className="sticky top-0 z-20 border-b border-border bg-white/95 backdrop-blur-sm lg:hidden">
       <div className="flex h-14 items-center justify-between px-4">
-        <Link href="/" className="font-semibold text-near-black">
+        <Link href="/" className="text-sm font-semibold text-near-black">
           Es Magico
         </Link>
         <Button
@@ -35,7 +39,11 @@ export function MobileNav() {
         </Button>
       </div>
       {open ? (
-        <nav id="mobile-nav" className="border-t border-border px-3 py-2">
+        <nav
+          id="mobile-nav"
+          className="border-t border-border px-2 py-2"
+          aria-label="Primary"
+        >
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const active = isActive(pathname, item.href);
@@ -44,10 +52,10 @@ export function MobileNav() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setOpen(false)}
-                className={`mb-1 flex items-center gap-3 rounded px-3 py-2 text-sm ${
+                className={`nav-link mb-0.5 flex items-center gap-2.5 rounded-[var(--radius-sm)] px-2.5 py-2 text-sm ${
                   active
                     ? "bg-off-white font-medium text-near-black"
-                    : "text-charcoal"
+                    : "text-charcoal hover:bg-off-white"
                 }`}
                 aria-current={active ? "page" : undefined}
               >

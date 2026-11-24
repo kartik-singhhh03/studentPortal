@@ -20,7 +20,7 @@ export function Button({
 }) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 rounded border px-3 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-near-black disabled:cursor-not-allowed ${variants[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-[var(--radius-sm)] border px-3 py-2 text-sm font-medium transition-[background-color,transform,opacity] duration-150 ease-out active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-near-black disabled:cursor-not-allowed disabled:active:scale-100 ${variants[variant]} ${className}`}
       {...props}
     >
       {children}

@@ -1,6 +1,7 @@
 import { ImportClientError } from "@/lib/import/errors";
 
-const DEFAULT_MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+/** Vercel Functions allow ~4.5 MB request bodies; stay under that by default. */
+const DEFAULT_MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 
 const ALLOWED_MIME_TYPES = new Set([
   "text/csv",

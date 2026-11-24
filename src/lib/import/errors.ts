@@ -7,6 +7,7 @@ export type ImportClientErrorCode =
   | "MISSING_HEADERS"
   | "NOT_FOUND"
   | "INVALID_QUERY"
+  | "IMPORT_IN_PROGRESS"
   | "INTERNAL_ERROR";
 
 export class ImportClientError extends Error {
@@ -45,7 +46,13 @@ export function toPublicError(error: unknown): {
     };
   }
 
-  console.error("[import]", error);
+  // Log only safe metadata — never dump objects that may contain connection URLs.
+  if (error instanceof Error) {
+    console.error("[api]", error.name, error.message);
+  } else {
+    console.error("[api] unexpected non-error throw");
+  }
+
   return {
     status: 500,
     body: {
